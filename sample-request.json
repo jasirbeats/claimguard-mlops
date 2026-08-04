@@ -1,0 +1,16 @@
+{
+  "claim_tracking_id": "SYN-DEMO-0001",
+  "claim_type": "professional",
+  "state_code": "LA",
+  "provider_type": "hospital",
+  "source_system": "batch",
+  "claim_amount": 8250.50,
+  "retry_count": 3,
+  "queue_depth": 240,
+  "processing_duration_seconds": 12500,
+  "previous_failure_count": 2,
+  "hour_of_day": 2,
+  "day_of_week": 1,
+  "procedure_count": 8,
+  "endpoint_response_code": "503"
+}
