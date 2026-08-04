@@ -10,3 +10,7 @@ artifacts/*.joblib
 artifacts/*.json
 .env
 .DS_Store
+mlflow.db
+mlartifacts/
+*.db-shm
+*.db-wal
