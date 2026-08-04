@@ -6,7 +6,7 @@ ClaimGuard AI is a production-style portfolio project that predicts whether a sy
 
 ## Current milestone
 
-**Milestone 1 MVP**
+**Milestone 2: MLflow experiment tracking and model registry**
 
 - Reproducible synthetic dataset
 - Data-contract validation
@@ -16,6 +16,9 @@ ClaimGuard AI is a production-style portfolio project that predicts whether a sy
 - FastAPI inference service
 - Liveness, readiness, and model-info endpoints
 - Unit and integration tests
+- MLflow experiment tracking for every candidate
+- SQLite-backed model registry and aliases
+- Champion/candidate promotion guardrails
 - Dockerfile and GitHub Actions CI
 
 ## Architecture
@@ -135,3 +138,52 @@ docker run --rm -p 8000:8000 claimguard-ai:0.1.0
 4. Kubernetes manifests, probes, autoscaling, and rollout controls
 5. Drift detection and retraining workflow
 6. Terraform and cloud deployment
+
+## Milestone 2 — MLflow tracking and registry
+
+Tracked training now creates one MLflow run for each candidate model, logs parameters and evaluation metrics, stores the model and evaluation report, registers the selected model, and manages these aliases:
+
+- `candidate`: newest validated selected model
+- `champion`: model currently approved for serving
+- `rollback`: previous champion after a successful promotion
+
+The first validated model becomes champion. Later candidates are promoted only when recall does not regress and the recall-weighted selection score improves.
+
+### Run tracked training
+
+```bash
+uv sync --dev
+uv run claimguard-generate --rows 10000 --seed 42
+uv run claimguard-train
+```
+
+### Start the MLflow dashboard
+
+```bash
+./scripts/start-mlflow.sh
+```
+
+Open:
+
+```text
+http://127.0.0.1:5000
+```
+
+In the UI, open the **ClaimGuard AI** experiment to compare Logistic Regression and Random Forest. Open **Models** to inspect `ClaimGuardRiskModel` versions and aliases.
+
+### Train without MLflow
+
+Unit tests and lightweight local checks can bypass tracking:
+
+```bash
+uv run claimguard-train --no-mlflow
+```
+
+### Generated MLflow state
+
+```text
+mlflow.db       # SQLite tracking and registry metadata
+mlartifacts/    # logged model and evaluation artifacts
+```
+
+Both paths are ignored by Git because experiment state and large artifacts should not be committed to the source repository.
