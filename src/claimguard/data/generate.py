@@ -21,9 +21,7 @@ def generate_claims(rows: int = 10_000, seed: int = 42) -> pd.DataFrame:
         size=rows,
         p=[0.45, 0.30, 0.15, 0.10],
     )
-    state_code = rng.choice(
-        ["LA", "TX", "FL", "GA", "MS", "AL", "AZ", "IN"], size=rows
-    )
+    state_code = rng.choice(["LA", "TX", "FL", "GA", "MS", "AL", "AZ", "IN"], size=rows)
     provider_type = rng.choice(
         ["hospital", "clinic", "specialist", "pharmacy", "laboratory"],
         size=rows,
