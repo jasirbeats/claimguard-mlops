@@ -1,20 +1,95 @@
-name: CI
+name: ClaimGuard CI
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - develop
+      - "feature/**"
+
   pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
 
 jobs:
-  test:
+  test-train-and-build:
     runs-on: ubuntu-latest
+
+    env:
+      PYTHONUNBUFFERED: "1"
+      MLFLOW_TRACKING_URI: "sqlite:///mlflow.db"
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
           enable-cache: true
-      - run: uv python install 3.13
-      - run: uv sync --dev
-      - run: uv run ruff check .
-      - run: uv run ruff format --check .
-      - run: uv run pytest --cov=claimguard --cov-report=term-missing
+
+      - name: Install Python
+        run: uv python install 3.13
+
+      - name: Install dependencies
+        run: uv sync --frozen --all-extras --dev
+
+      - name: Run lint checks
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+
+      - name: Run tests
+        run: uv run pytest -q
+
+      - name: Generate training data
+        run: uv run claimguard-generate --rows 10000 --seed 42
+
+      - name: Train ClaimGuard models
+        run: uv run claimguard-train
+
+      - name: Verify training artifacts
+        run: |
+          test -f artifacts/model.joblib
+          test -f artifacts/model_metadata.json
+          test -f artifacts/metrics.json
+          python -m json.tool artifacts/metrics.json
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t claimguard-api:${{ github.sha }} \
+            .
+
+      - name: Test Docker container
+        run: |
+          docker run -d \
+            --name claimguard-api \
+            -p 8000:8000 \
+            claimguard-api:${{ github.sha }}
+
+          for attempt in {1..20}; do
+            if curl --fail --silent \
+              http://127.0.0.1:8000/health/ready; then
+              echo
+              echo "ClaimGuard API is ready"
+              exit 0
+            fi
+
+            echo "Waiting for API: attempt ${attempt}/20"
+            sleep 2
+          done
+
+          docker logs claimguard-api
+          exit 1
+
+      - name: Show container logs
+        if: always()
+        run: docker logs claimguard-api || true
+
+      - name: Remove test container
+        if: always()
+        run: docker rm -f claimguard-api || true
