@@ -36,7 +36,9 @@ def resolve_tracking_settings(
     registered_model_name: str | None = None,
 ) -> TrackingSettings:
     return TrackingSettings(
-        tracking_uri=tracking_uri or os.getenv("MLFLOW_TRACKING_URI") or default_tracking_uri(),
+        tracking_uri=tracking_uri
+        or os.getenv("MLFLOW_TRACKING_URI")
+        or default_tracking_uri(),
         experiment_name=experiment_name
         or os.getenv("MLFLOW_EXPERIMENT_NAME")
         or DEFAULT_EXPERIMENT_NAME,
@@ -55,6 +57,11 @@ def _scalar_params(params: dict[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in params.items() if isinstance(value, allowed)}
 
 
+def _uses_tracking_server(tracking_uri: str) -> bool:
+    """Return True when MLflow is accessed through an HTTP tracking server."""
+    return tracking_uri.startswith(("http://", "https://"))
+
+
 def configure_tracking(settings: TrackingSettings) -> tuple[Any, str]:
     """Configure MLflow and return its client plus the experiment ID."""
     try:
@@ -65,15 +72,26 @@ def configure_tracking(settings: TrackingSettings) -> tuple[Any, str]:
             "MLflow is not installed. Run 'uv sync --dev' before tracked training."
         ) from exc
 
-    settings.artifact_root.mkdir(parents=True, exist_ok=True)
+    uses_server = _uses_tracking_server(settings.tracking_uri)
+    if not uses_server:
+        settings.artifact_root.mkdir(parents=True, exist_ok=True)
+
     mlflow.set_tracking_uri(settings.tracking_uri)
     client = MlflowClient(tracking_uri=settings.tracking_uri)
     experiment = client.get_experiment_by_name(settings.experiment_name)
     if experiment is None:
+        create_kwargs: dict[str, Any] = {
+            "tags": {
+                "project": "claimguard-ai",
+                "data_classification": "synthetic",
+            }
+        }
+        if not uses_server:
+            create_kwargs["artifact_location"] = settings.artifact_root.as_uri()
+
         experiment_id = client.create_experiment(
             settings.experiment_name,
-            artifact_location=settings.artifact_root.as_uri(),
-            tags={"project": "claimguard-ai", "data_classification": "synthetic"},
+            **create_kwargs,
         )
     else:
         experiment_id = experiment.experiment_id

@@ -1,0 +1,16 @@
+FROM python:3.13-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+RUN useradd --create-home --uid 10002 mlflowuser
+WORKDIR /opt/mlflow
+
+RUN pip install --no-cache-dir \
+    "mlflow>=3.14,<4.0" \
+    "psycopg[binary]>=3.2,<4.0" \
+    "boto3>=1.35,<2.0"
+
+USER mlflowuser
+EXPOSE 5000
