@@ -18,3 +18,6 @@ mlartifacts/
 # SRE 87 generated runtime state and audit outputs
 runtime/
 data/sre87/claims.json
+
+# Temporary command output
+out.txt
