@@ -187,3 +187,24 @@ mlartifacts/    # logged model and evaluation artifacts
 ```
 
 Both paths are ignored by Git because experiment state and large artifacts should not be committed to the source repository.
+
+
+## SRE 87 deterministic control-cycle digital twin
+
+ClaimGuard now includes a synthetic implementation of the SRE 87 hourly claim-monitoring contract. It validates prior-run claim IDs before querying new work, halts when a previous claim has not reached status `300`, applies deterministic routing for statuses `655`, `665`, `800`, and `850`, writes audit artifacts, creates mock incidents, preserves exit codes, and supports pause/resume and dry-run controls.
+
+```bash
+uv run claimguard-sre87 seed --scenario happy
+uv run claimguard-sre87 run
+```
+
+Demonstrate the mandatory prior-run halt:
+
+```bash
+uv run claimguard-sre87 seed --scenario unresolved
+uv run claimguard-sre87 run
+uv run claimguard-sre87 run
+# second command exits 1 and writes one mock incident
+```
+
+See `docs/sre87-digital-twin.md` for the full requirement mapping and enterprise adapter boundaries.

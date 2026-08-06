@@ -16,6 +16,7 @@ dependencies = [
   "numpy>=2.2,<3.0",
   "pandas>=2.2,<3.0",
   "pydantic>=2.10,<3.0",
+  "prometheus-client>=0.26,<1.0",
   "scikit-learn>=1.8,<2.0",
   "uvicorn[standard]>=0.35,<1.0",
 ]
@@ -23,6 +24,7 @@ dependencies = [
 [dependency-groups]
 dev = [
   "httpx>=0.28,<1.0",
+  "httpx2>=2.9.1",
   "pytest>=8.3,<10.0",
   "pytest-cov>=6.0,<8.0",
   "ruff>=0.12,<1.0",
@@ -31,6 +33,7 @@ dev = [
 [project.scripts]
 claimguard-generate = "claimguard.data.generate:main"
 claimguard-train = "claimguard.models.train:main"
+claimguard-sre87 = "claimguard.sre87.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/claimguard"]
@@ -39,6 +42,9 @@ packages = ["src/claimguard"]
 pythonpath = ["src"]
 testpaths = ["tests"]
 addopts = "-q"
+filterwarnings = [
+    "ignore:Setting the shape on a NumPy array has been deprecated.*:DeprecationWarning:joblib.numpy_pickle",
+]
 
 [tool.ruff]
 line-length = 100
@@ -46,3 +52,4 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
+
