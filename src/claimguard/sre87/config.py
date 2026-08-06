@@ -46,6 +46,13 @@ class PathConfig:
 
 
 @dataclass(frozen=True)
+class AIConfig:
+    enabled: bool
+    model_path: Path
+    metadata_path: Path
+
+
+@dataclass(frozen=True)
 class IncidentConfig:
     enabled: bool
     assignment_group: str
@@ -57,6 +64,7 @@ class SRE87Config:
     thresholds: ThresholdConfig
     paths: PathConfig
     incident: IncidentConfig
+    ai: AIConfig
 
     @classmethod
     def load(cls, path: Path) -> SRE87Config:
@@ -69,6 +77,7 @@ class SRE87Config:
         thresholds = payload["thresholds"]
         paths = payload["paths"]
         incident = payload.get("incident", {})
+        ai = payload.get("ai", {})
         return cls(
             environment=str(payload.get("environment", "DEMO")),
             thresholds=ThresholdConfig(
@@ -87,6 +96,20 @@ class SRE87Config:
             incident=IncidentConfig(
                 enabled=bool(incident.get("enabled", True)),
                 assignment_group=str(incident.get("assignment_group", "DEMO_SRE_SUPPORT")),
+            ),
+            ai=AIConfig(
+                enabled=bool(ai.get("enabled", False)),
+                model_path=_project_path(
+                    str(ai.get("model_path", "artifacts/sre87_risk_model.joblib"))
+                ),
+                metadata_path=_project_path(
+                    str(
+                        ai.get(
+                            "metadata_path",
+                            "artifacts/sre87_risk_model_metadata.json",
+                        )
+                    )
+                ),
             ),
         )
 

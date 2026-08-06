@@ -3,7 +3,12 @@
   "thresholds": {
     "claim_age_hours": 2,
     "success_status": 300,
-    "eligible_statuses": [655, 665, 800, 850],
+    "eligible_statuses": [
+      655,
+      665,
+      800,
+      850
+    ],
     "include_status_660": false
   },
   "paths": {
@@ -13,5 +18,10 @@
   "incident": {
     "enabled": true,
     "assignment_group": "DEMO_STL_EDI_PRODUCTIONSUPPORT"
+  },
+  "ai": {
+    "enabled": true,
+    "model_path": "artifacts/sre87_risk_model.joblib",
+    "metadata_path": "artifacts/sre87_risk_model_metadata.json"
   }
 }
