@@ -15,9 +15,7 @@ DEFAULT_CONFIG = Path("config/sre87.demo.json")
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Run the safe SRE 87 claim-recovery digital twin."
-    )
+    parser = argparse.ArgumentParser(description="Run the safe SRE 87 claim-recovery digital twin.")
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     subparsers = parser.add_subparsers(dest="command", required=True)
 

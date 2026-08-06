@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from claimguard.sre87.models import ClaimRecord
 from claimguard.sre87.repository import JsonClaimRepository
@@ -16,7 +16,7 @@ def seed_demo_repository(
 ) -> list[ClaimRecord]:
     if scenario not in SCENARIOS:
         raise ValueError(f"Unknown scenario {scenario!r}; choose from {SCENARIOS}")
-    current = now or datetime.now(timezone.utc)
+    current = now or datetime.now(UTC)
     claims = [
         _claim("SRE87-655-001", 655, current - timedelta(hours=4), "resolve"),
         _claim("SRE87-665-001", 665, current - timedelta(hours=3), "resolve"),
@@ -26,9 +26,7 @@ def seed_demo_repository(
         _claim("SRE87-COMPLETE-300", 300, current - timedelta(hours=8), "resolve"),
     ]
     if scenario == "unresolved":
-        claims[1] = _claim(
-            "SRE87-665-001", 665, current - timedelta(hours=3), "remain"
-        )
+        claims[1] = _claim("SRE87-665-001", 665, current - timedelta(hours=3), "remain")
     elif scenario == "endpoint-failure":
         claims = [
             ClaimRecord(

@@ -117,8 +117,7 @@ def test_unresolved_prior_run_halts_before_new_query_and_creates_one_incident(
 
     assert first_code == ExitCode.SUCCESS
     assert any(
-        result.claim_tracking_id == "SRE87-665-001"
-        and result.post_recovery_status == 665
+        result.claim_tracking_id == "SRE87-665-001" and result.post_recovery_status == 665
         for result in first_summary.recovery_results
     )
     assert second_code == ExitCode.PRIOR_RUN_HALT

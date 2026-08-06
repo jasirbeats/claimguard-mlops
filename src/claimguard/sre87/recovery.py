@@ -55,9 +55,7 @@ class MockRecoveryClient:
         if not dry_run:
             self.request_count += 1
 
-        has_endpoint_failure = any(
-            claim.mock_recovery_outcome == "fail" for claim in claims
-        )
+        has_endpoint_failure = any(claim.mock_recovery_outcome == "fail" for claim in claims)
         accepted = dry_run or not has_endpoint_failure
         response_code = 0 if dry_run else (200 if accepted else 503)
 
@@ -70,9 +68,7 @@ class MockRecoveryClient:
             if resolvable:
                 self.repository.update_status(resolvable, self.success_status)
 
-        statuses_after = self.repository.get_statuses(
-            [claim.claim_tracking_id for claim in claims]
-        )
+        statuses_after = self.repository.get_statuses([claim.claim_tracking_id for claim in claims])
         return [
             RecoveryResult(
                 claim_tracking_id=claim.claim_tracking_id,

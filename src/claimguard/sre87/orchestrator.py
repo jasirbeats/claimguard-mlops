@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from claimguard.sre87.config import SRE87Config
 from claimguard.sre87.exit_codes import ExitCode
@@ -35,7 +35,7 @@ class SRE87ControlCycle:
         dry_run: bool = False,
         now: datetime | None = None,
     ) -> tuple[ExitCode, RunSummary]:
-        current = now or datetime.now(timezone.utc)
+        current = now or datetime.now(UTC)
         if current.tzinfo is None:
             raise ValueError("now must include a timezone")
         run_id = current.strftime("%Y%m%d_%H%M%S")

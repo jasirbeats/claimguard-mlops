@@ -76,9 +76,7 @@ class SRE87Config:
                 success_status=int(thresholds.get("success_status", 300)),
                 eligible_statuses=tuple(
                     int(value)
-                    for value in thresholds.get(
-                        "eligible_statuses", [655, 665, 800, 850]
-                    )
+                    for value in thresholds.get("eligible_statuses", [655, 665, 800, 850])
                 ),
                 include_status_660=bool(thresholds.get("include_status_660", False)),
             ),

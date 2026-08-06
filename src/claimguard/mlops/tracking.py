@@ -36,9 +36,7 @@ def resolve_tracking_settings(
     registered_model_name: str | None = None,
 ) -> TrackingSettings:
     return TrackingSettings(
-        tracking_uri=tracking_uri
-        or os.getenv("MLFLOW_TRACKING_URI")
-        or default_tracking_uri(),
+        tracking_uri=tracking_uri or os.getenv("MLFLOW_TRACKING_URI") or default_tracking_uri(),
         experiment_name=experiment_name
         or os.getenv("MLFLOW_EXPERIMENT_NAME")
         or DEFAULT_EXPERIMENT_NAME,
