@@ -14,3 +14,7 @@ mlflow.db
 mlartifacts/
 *.db-shm
 *.db-wal
+
+# SRE 87 generated runtime state and audit outputs
+runtime/
+data/sre87/claims.json

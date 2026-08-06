@@ -1,0 +1,17 @@
+{
+  "environment": "DEMO",
+  "thresholds": {
+    "claim_age_hours": 2,
+    "success_status": 300,
+    "eligible_statuses": [655, 665, 800, 850],
+    "include_status_660": false
+  },
+  "paths": {
+    "claims_file": "data/sre87/claims.json",
+    "runtime_root": "runtime/sre87"
+  },
+  "incident": {
+    "enabled": true,
+    "assignment_group": "DEMO_STL_EDI_PRODUCTIONSUPPORT"
+  }
+}
