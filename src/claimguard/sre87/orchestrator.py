@@ -3,10 +3,11 @@ from __future__ import annotations
 from collections import Counter
 from datetime import UTC, datetime
 
+from claimguard.sre87.ai.scoring import SRE87RiskScorer
 from claimguard.sre87.config import SRE87Config
 from claimguard.sre87.exit_codes import ExitCode
 from claimguard.sre87.incidents import MockIncidentService
-from claimguard.sre87.models import PriorValidation, RunSummary
+from claimguard.sre87.models import ClaimRecord, PriorValidation, RiskAssessment, RunSummary
 from claimguard.sre87.outputs import RunOutputWriter
 from claimguard.sre87.recovery import MockRecoveryClient
 from claimguard.sre87.repository import JsonClaimRepository
@@ -28,6 +29,11 @@ class SRE87ControlCycle:
             enabled=config.incident.enabled,
         )
         self.outputs = RunOutputWriter(config.paths.logs_root)
+        self.risk_scorer = (
+            SRE87RiskScorer(config.ai.model_path, config.ai.metadata_path)
+            if config.ai.enabled
+            else None
+        )
 
     def run(
         self,
@@ -107,6 +113,29 @@ class SRE87ControlCycle:
                 )
             )
 
+            risk_assessments, ai_scoring_status = self._score_claims(eligible, now=current)
+            if ai_scoring_status == "scored":
+                for assessment in sorted(
+                    risk_assessments, key=lambda value: value.priority_score, reverse=True
+                ):
+                    events.append(
+                        self._event(
+                            current,
+                            "AI advisory "
+                            f"id={assessment.claim_tracking_id} "
+                            f"risk={assessment.risk_level} "
+                            f"probability={assessment.probability:.3f} "
+                            f"priority={assessment.priority_score}",
+                        )
+                    )
+            elif ai_scoring_status == "unavailable":
+                events.append(
+                    self._event(
+                        current,
+                        "AI advisory unavailable; deterministic SRE 87 routing remains active",
+                    )
+                )
+
             if not eligible:
                 self.state.save(
                     run_id=run_id,
@@ -124,6 +153,8 @@ class SRE87ControlCycle:
                     prior_validation=prior,
                     eligible_claim_count=0,
                     eligible_claims_by_status=dict(counts),
+                    risk_assessments=risk_assessments,
+                    ai_scoring_status=ai_scoring_status,
                 )
                 return ExitCode.SUCCESS, self.outputs.write(summary, events, current)
 
@@ -177,6 +208,8 @@ class SRE87ControlCycle:
                 eligible_claim_count=len(eligible),
                 eligible_claims_by_status=dict(counts),
                 recovery_results=results,
+                risk_assessments=risk_assessments,
+                ai_scoring_status=ai_scoring_status,
                 incident=incident,
             )
             return code, self.outputs.write(summary, events, current)
@@ -227,6 +260,8 @@ class SRE87ControlCycle:
         eligible_claim_count: int = 0,
         eligible_claims_by_status: dict[str, int] | None = None,
         recovery_results: list | None = None,
+        risk_assessments: list[RiskAssessment] | None = None,
+        ai_scoring_status: str = "disabled",
         incident=None,
     ) -> RunSummary:
         return RunSummary(
@@ -242,8 +277,22 @@ class SRE87ControlCycle:
             eligible_claims_by_status=eligible_claims_by_status or {},
             prior_validation=prior_validation,
             recovery_results=recovery_results or [],
+            risk_assessments=risk_assessments or [],
+            ai_scoring_status=ai_scoring_status,
             incident=incident,
         )
+
+    def _score_claims(
+        self,
+        claims: list[ClaimRecord],
+        *,
+        now: datetime,
+    ) -> tuple[list[RiskAssessment], str]:
+        if not self.config.ai.enabled:
+            return [], "disabled"
+        if self.risk_scorer is None or not self.risk_scorer.available:
+            return [], "unavailable"
+        return self.risk_scorer.score(claims, now=now), "scored"
 
     @staticmethod
     def _event(timestamp: datetime, message: str) -> str:

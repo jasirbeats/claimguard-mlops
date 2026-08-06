@@ -1,4 +1,4 @@
-.PHONY: install generate train train-local test lint run demo mlflow-demo mlflow-server docker-build docker-run compose-up compose-down traffic sre87-seed sre87-run sre87-demo sre87-unresolved sre87-failure clean
+.PHONY: install generate train train-local test lint run demo mlflow-demo mlflow-server docker-build docker-run compose-up compose-down traffic sre87-seed sre87-run sre87-demo sre87-unresolved sre87-failure sre87-ai-train sre87-ai-preview sre87-ai-demo clean
 
 install:
 	uv sync --dev
@@ -59,6 +59,15 @@ sre87-unresolved:
 
 sre87-failure:
 	./scripts/run-sre87-demo.sh endpoint-failure
+
+sre87-ai-train:
+	uv run python -m claimguard.sre87.ai --rows 12000 --no-mlflow
+
+sre87-ai-preview:
+	uv run claimguard-sre87 risk-preview
+
+sre87-ai-demo:
+	./scripts/run-sre87-ai-demo.sh 12000
 
 clean:
 	rm -rf .venv .pytest_cache .ruff_cache .coverage htmlcov

@@ -9,7 +9,7 @@ WORKDIR /opt/mlflow
 
 RUN pip install --no-cache-dir \
     "mlflow>=3.14,<4.0" \
-    "psycopg[binary]>=3.2,<4.0" \
+    "psycopg2-binary>=2.9,<3.0" \
     "boto3>=1.35,<2.0"
 
 USER mlflowuser

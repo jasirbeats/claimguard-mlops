@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import tempfile
+from dataclasses import replace
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -68,14 +69,7 @@ class JsonClaimRepository:
         updated: list[ClaimRecord] = []
         for claim in self.list_claims():
             if claim.claim_tracking_id in wanted:
-                updated.append(
-                    ClaimRecord(
-                        claim_tracking_id=claim.claim_tracking_id,
-                        process_status=status,
-                        claim_receipt_time=claim.claim_receipt_time,
-                        mock_recovery_outcome=claim.mock_recovery_outcome,
-                    )
-                )
+                updated.append(replace(claim, process_status=status))
             else:
                 updated.append(claim)
         self.write_claims(updated)

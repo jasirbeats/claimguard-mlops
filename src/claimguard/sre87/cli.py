@@ -5,6 +5,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+from claimguard.sre87.ai.scoring import SRE87RiskScorer
 from claimguard.sre87.config import SRE87Config
 from claimguard.sre87.orchestrator import SRE87ControlCycle
 from claimguard.sre87.repository import JsonClaimRepository
@@ -33,6 +34,8 @@ def parse_args() -> argparse.Namespace:
     subparsers.add_parser("pause", help="Pause future control cycles")
     subparsers.add_parser("resume", help="Resume future control cycles")
     subparsers.add_parser("status", help="Show pause and last-run state")
+    subparsers.add_parser("risk-preview", help="Score eligible claims without recovery calls")
+    subparsers.add_parser("risk-model-info", help="Show advisory risk model metadata")
     return parser.parse_args()
 
 
@@ -81,6 +84,48 @@ def main() -> None:
                     "state": state.load(),
                     "claims_file": str(config.paths.claims_file),
                     "incidents_file": str(config.paths.incidents_file),
+                },
+                indent=2,
+            )
+        )
+        return
+
+    if args.command == "risk-model-info":
+        scorer = SRE87RiskScorer(config.ai.model_path, config.ai.metadata_path)
+        print(
+            json.dumps(
+                {
+                    "enabled": config.ai.enabled,
+                    "available": scorer.available,
+                    "load_error": scorer.load_error,
+                    "model_path": str(config.ai.model_path),
+                    "metadata_path": str(config.ai.metadata_path),
+                    "metadata": scorer.metadata,
+                },
+                indent=2,
+            )
+        )
+        return
+
+    if args.command == "risk-preview":
+        scorer = SRE87RiskScorer(config.ai.model_path, config.ai.metadata_path)
+        current = datetime.now().astimezone()
+        repository = JsonClaimRepository(config.paths.claims_file)
+        eligible = repository.eligible_claims(
+            now=current,
+            age_hours=config.thresholds.claim_age_hours,
+            statuses=config.thresholds.effective_eligible_statuses,
+        )
+        assessments = scorer.score(eligible, now=current)
+        print(
+            json.dumps(
+                {
+                    "available": scorer.available,
+                    "load_error": scorer.load_error,
+                    "advisory_only": True,
+                    "routing_authority": "deterministic_sre87_rules",
+                    "eligible_count": len(eligible),
+                    "assessments": [value.to_dict() for value in assessments],
                 },
                 indent=2,
             )

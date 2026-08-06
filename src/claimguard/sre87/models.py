@@ -18,6 +18,13 @@ class ClaimRecord:
     process_status: int
     claim_receipt_time: datetime
     mock_recovery_outcome: str = "resolve"
+    claim_amount: float = 0.0
+    retry_count: int = 0
+    queue_depth: int = 0
+    endpoint_latency_ms: float = 0.0
+    previous_failure_count: int = 0
+    source_system: str = "UNKNOWN"
+    provider_type: str = "UNKNOWN"
 
     @classmethod
     def from_dict(cls, value: dict[str, Any]) -> ClaimRecord:
@@ -26,6 +33,13 @@ class ClaimRecord:
             process_status=int(value["process_status"]),
             claim_receipt_time=parse_datetime(str(value["claim_receipt_time"])),
             mock_recovery_outcome=str(value.get("mock_recovery_outcome", "resolve")),
+            claim_amount=float(value.get("claim_amount", 0.0)),
+            retry_count=int(value.get("retry_count", 0)),
+            queue_depth=int(value.get("queue_depth", 0)),
+            endpoint_latency_ms=float(value.get("endpoint_latency_ms", 0.0)),
+            previous_failure_count=int(value.get("previous_failure_count", 0)),
+            source_system=str(value.get("source_system", "UNKNOWN")),
+            provider_type=str(value.get("provider_type", "UNKNOWN")),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -34,6 +48,13 @@ class ClaimRecord:
             "process_status": self.process_status,
             "claim_receipt_time": self.claim_receipt_time.isoformat(),
             "mock_recovery_outcome": self.mock_recovery_outcome,
+            "claim_amount": self.claim_amount,
+            "retry_count": self.retry_count,
+            "queue_depth": self.queue_depth,
+            "endpoint_latency_ms": self.endpoint_latency_ms,
+            "previous_failure_count": self.previous_failure_count,
+            "source_system": self.source_system,
+            "provider_type": self.provider_type,
         }
 
 
@@ -75,6 +96,24 @@ class RecoveryResult:
 
 
 @dataclass(frozen=True)
+class RiskAssessment:
+    claim_tracking_id: str
+    probability: float
+    risk_level: str
+    priority_score: int
+    likely_failure_layer: str
+    recommended_action: str
+    explanation: str
+    model_name: str
+    model_version: str
+    advisory_only: bool
+    routing_authority: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
 class IncidentRecord:
     incident_id: str
     run_id: str
@@ -102,6 +141,8 @@ class RunSummary:
     eligible_claims_by_status: dict[str, int]
     prior_validation: PriorValidation
     recovery_results: list[RecoveryResult] = field(default_factory=list)
+    risk_assessments: list[RiskAssessment] = field(default_factory=list)
+    ai_scoring_status: str = "disabled"
     incident: IncidentRecord | None = None
     output_json: str | None = None
     output_csv: str | None = None
@@ -120,6 +161,8 @@ class RunSummary:
             "eligible_claim_count": self.eligible_claim_count,
             "eligible_claims_by_status": self.eligible_claims_by_status,
             "prior_validation": self.prior_validation.to_dict(),
+            "ai_scoring_status": self.ai_scoring_status,
+            "risk_assessments": [assessment.to_dict() for assessment in self.risk_assessments],
             "recovery_results": [result.to_dict() for result in self.recovery_results],
             "incident": self.incident.to_dict() if self.incident else None,
             "outputs": {
